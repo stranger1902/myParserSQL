@@ -39,8 +39,9 @@ def writeLog(msg, level, onlyPrompt=False):
 
     print(color + f"{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}\t[{level.value}]\t\t{msg}", Style.RESET_ALL)
 
-def createFolders():
+def createFolders(): 
     
-    if not path.exists(PATH.LOG_FILE_PATH.value): mkdir(PATH.LOG_FILE_PATH.value)
+    if not os.path.exists(PATH.LOG_FILE_PATH.value): mkdir(PATH.LOG_FILE_PATH.value)
+
 
 init()
