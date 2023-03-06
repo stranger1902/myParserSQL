@@ -185,9 +185,9 @@ class MyParser(MyBaseParser):
 
         self.eat("HAVING")
 
-        conditionsList = [ self.relationalExpression() ]
+        conditionsList = [ self.conditionExpression() ]
         
-        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.relationalExpression())
+        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
 
         return {"type" : "having_statement", "conditions_list" : conditionsList}
 
@@ -352,9 +352,9 @@ class MyParser(MyBaseParser):
 
         self.eat("WHEN")
         
-        conditionsList = [ self.relationalExpression() ]
+        conditionsList = [ self.conditionExpression() ]
 
-        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.relationalExpression())
+        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
 
         self.eat("THEN")
 
