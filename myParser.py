@@ -120,6 +120,32 @@ class MyParser(MyBaseParser):
 
         return {"type" : "function", "distinct" : True if distinct else False, "name" : identifier, "arguments_list" : myArgumentsList}
 
+    def conditionsList(self):
+        
+        if self.Lookhead:
+        
+            if self.Lookhead["type"] == "OPEN-ROUND-BRACKET":
+
+                self.eat("OPEN-ROUND-BRACKET")
+
+                aaa = self.conditionsList()
+
+                myConditionsList = [ aaa ] if not isinstance(aaa, list) else aaa
+
+                while self.Lookhead and self.Lookhead["category"] == "CONDITION": myConditionsList.append(self.conditionExpression())
+
+                myConditionsList = {"type" : "block_statement", "body" : myConditionsList}
+
+                self.eat("CLOSE-ROUND-BRACKET")
+        
+            else:
+
+                myConditionsList = [ self.conditionExpression() ]
+                
+                while self.Lookhead and self.Lookhead["category"] == "CONDITION": myConditionsList.append(self.conditionExpression())
+
+            return myConditionsList
+
 # ************************************************* STATEMENTS ************************************************* #
 
     def selectStatement(self):
@@ -162,12 +188,8 @@ class MyParser(MyBaseParser):
     def whereStatement(self):
 
         self.eat("WHERE")
-
-        conditionsList = [ self.conditionExpression() ]
         
-        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
-
-        return {"type" : "where_statement", "conditions_list" : conditionsList}
+        return {"type" : "where_statement", "conditions_list" : self.conditionsList()}
 
     def groupByStatement(self): 
 
@@ -247,22 +269,19 @@ class MyParser(MyBaseParser):
 
     def conditionExpression(self):
 
-        if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "right" : self.conditionExpression()}
+        if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "right" : self.conditionsList()}
 
         else: 
             
             operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
 
-            #return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} if operator else self.relationalExpression()
             return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} 
 
     def relationalExpression(self):
 
         if self.Lookhead:
 
-            if self.Lookhead["category"] == "CONDITION": return self.conditionExpression()
-
-            elif self.Lookhead["type"] == "EXISTS": return self.existsExpression()
+            if self.Lookhead["type"] == "EXISTS": return self.existsExpression()
 
             else:
                 
