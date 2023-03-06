@@ -33,6 +33,7 @@ RegexList = [
              ("^(?i)\\bHAVING\\b", "HAVING", "KEYWORD", "UPPER"),                       # having keyword
              ("^(?i)\\bSELECT\\b", "SELECT", "KEYWORD", "UPPER"),                       # select keyword
              ("^(?i)\\bEXISTS\\b", "EXISTS", "KEYWORD", "UPPER"),                       # exists keyword
+             ("^(?i)\\bNOLOCK\\b", "NOLOCK", "KEYWORD", "UPPER"),                       # nolock keyword
              ("^(?i)\\bOUTER\\b", "OUTER", "KEYWORD", "UPPER"),                         # outer keyword
              ("^(?i)\\bINNER\\b", "INNER", "KEYWORD", "UPPER"),                         # inner keyword
              ("^(?i)\\bUNION\\b", "UNION", "KEYWORD", "UPPER"),                         # union keyword

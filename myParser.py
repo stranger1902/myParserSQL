@@ -1,9 +1,12 @@
 from myBaseParser import MyBaseParser
 
+import myException as EX
+
 #TODO: impedire casi in cui una condizione è costituita soltanto da un identificatore (SELECT campo FROM tabella a WHERE hgvxnsfj AND a.campo < 3)
 #TODO: impedire alias nelle condizioni (SELECT campo FROM tabella WHERE a = b AS c)
 #TODO: prevedere alias per block statement nella select (SELECT (1+2) AS c )
 #TODO: impedire alias nelle expression (SELECT 1 AS a + 2 FROM tabella)
+#TODO: gestire le keyword ALL e ANY
 
 class MyParser(MyBaseParser):
 
@@ -33,13 +36,12 @@ class MyParser(MyBaseParser):
 
     def query(self):
 
-        myStatementsList = [self.selectStatement()]
+        myStatementsList = [ self.selectStatement() ]
 
         if self.Lookhead and self.Lookhead["type"] == "FROM": myStatementsList.append(self.fromStatement())
 
         if self.Lookhead and self.Lookhead["type"] == "WHERE": myStatementsList.append(self.whereStatement())
 
-        #TODO: strutturare in modo che il group by e l'having e l'oder by ci siano solo quando previsti dalla sintassi SQL
         if self.Lookhead and self.Lookhead["type"] == "GROUP_BY": 
 
             myStatementsList.append(self.groupByStatement())
@@ -72,11 +74,29 @@ class MyParser(MyBaseParser):
 
     def table(self):
 
-        table = self.subquery() if self.Lookhead["type"] == "OPEN-ROUND-BRACKET" else self.identifier()
+        table = self.subquery() if self.Lookhead and self.Lookhead["type"] == "OPEN-ROUND-BRACKET" else self.identifier()
 
-        if self.Lookhead and self.Lookhead["type"] == "AS": self.eat("AS")
+        if self.Lookhead and self.Lookhead["type"] == "OPEN-ROUND-BRACKET":
 
-        return {"type" : "table", "value" : table, "alias" : self.identifier()["value"] if self.Lookhead and self.Lookhead["category"] not in ("KEYWORD", "SYMBOL") else None}
+            self.eat("OPEN-ROUND-BRACKET")
+            nolock_before = self.eat("NOLOCK")
+            self.eat("CLOSE-ROUND-BRACKET")
+
+        else: nolock_before = None
+
+        alias = self.alias()
+
+        if self.Lookhead and self.Lookhead["type"] == "OPEN-ROUND-BRACKET":
+
+            self.eat("OPEN-ROUND-BRACKET")
+            nolock_after = self.eat("NOLOCK")
+            self.eat("CLOSE-ROUND-BRACKET")
+        
+        else: nolock_after = None
+        
+        if nolock_before and nolock_after: raise EX.MyParserException("NOLOCK is declared 2 times")
+
+        return {"type" : "table", "nolock" : True if nolock_before else True if nolock_after else False, "value" : table, "alias" : alias}
 
     def function(self):
 
@@ -110,7 +130,7 @@ class MyParser(MyBaseParser):
         
         if self.Lookhead and self.Lookhead["type"] == "TOP":
             self.eat("TOP") 
-            limitNumberRow = self.numericLiteral()
+            limitNumberRow = self.numericLiteral(self.getSign())
 
         else: limitNumberRow = None
 
@@ -203,17 +223,17 @@ class MyParser(MyBaseParser):
 
     def joinExpression(self): 
         
-        #TODO: individuare se INNER o OUTER JOIN
+        joinType = ""
 
         if self.Lookhead["type"] == "INNER": self.eat("INNER")
 
         elif self.Lookhead["type"] in ("LEFT", "RIGHT"):
 
-            self.eat(self.Lookhead["type"])
+            joinType = self.eat(self.Lookhead["type"])
 
             if self.Lookhead["type"] == "OUTER": self.eat("OUTER")
 
-        joinToken = self.eat("JOIN") if self.Lookhead["type"] == "JOIN" else None
+        joinType += self.eat("JOIN") if self.Lookhead["type"] == "JOIN" else None
 
         table = self.table()
 
@@ -223,7 +243,7 @@ class MyParser(MyBaseParser):
         
         while self.Lookhead["category"] == "CONDITION": conditionsList.append(self.relationalExpression())
 
-        return {"type" : "join_expression", "value" : table, "conditions_list" : conditionsList}
+        return {"type" : "join_expression", "join_type" : joinType,  "value" : table, "conditions_list" : conditionsList}
 
     def conditionExpression(self):
 
@@ -420,7 +440,9 @@ class MyParser(MyBaseParser):
     
 # ************************************************** FIELDS **************************************************** #
 
-    def nameFieldWithOrientation(self): return {"orientation" : self.eat(self.Lookhead["type"])["type"] if self.Lookhead["type"] in ("DESC", "ASC") else None, "body" : self.nameFieldWithAlias()}
+    def nameFieldWithOrientation(self): 
+        
+        return {"orientation" : self.eat(self.Lookhead["type"])["type"] if self.Lookhead["type"] in ("DESC", "ASC") else None, "body" : self.nameFieldWithAlias()}
     
     def nameFieldWithAlias(self, sign=None): 
         
