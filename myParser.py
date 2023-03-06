@@ -163,7 +163,7 @@ class MyParser(MyBaseParser):
 
         self.eat("WHERE")
 
-        conditionsList = [ self.relationalExpression() ]
+        conditionsList = [ self.conditionExpression() ]
         
         while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
 
@@ -229,21 +229,21 @@ class MyParser(MyBaseParser):
 
         elif self.Lookhead["type"] in ("LEFT", "RIGHT"):
 
-            joinType = self.eat(self.Lookhead["type"])
+            joinType = self.eat(self.Lookhead["type"])["value"]
 
             if self.Lookhead["type"] == "OUTER": self.eat("OUTER")
 
-        joinType += self.eat("JOIN") if self.Lookhead["type"] == "JOIN" else None
+        joinType += self.eat("JOIN")["value"] if self.Lookhead["type"] == "JOIN" else None
 
         table = self.table()
 
         self.eat("ON")
         
-        conditionsList = [ self.relationalExpression() ]
+        conditionsList = [ self.conditionExpression() ]
         
-        while self.Lookhead["category"] == "CONDITION": conditionsList.append(self.relationalExpression())
+        while self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
 
-        return {"type" : "join_expression", "join_type" : joinType,  "value" : table, "conditions_list" : conditionsList}
+        return {"type" : "join_expression", "join_type" : joinType.upper(), "value" : table, "conditions_list" : conditionsList}
 
     def conditionExpression(self):
 
@@ -253,7 +253,8 @@ class MyParser(MyBaseParser):
             
             operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
 
-            return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} if operator else self.relationalExpression()
+            #return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} if operator else self.relationalExpression()
+            return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} 
 
     def relationalExpression(self):
 
