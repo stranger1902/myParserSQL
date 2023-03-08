@@ -72,7 +72,7 @@ class MyParser(MyBaseParser):
 
         return subquery
 
-    def table(self):
+    def table(self, operator):
 
         table = self.subquery() if self.Lookhead and self.Lookhead["type"] == "OPEN-ROUND-BRACKET" else self.identifier()
 
@@ -96,7 +96,7 @@ class MyParser(MyBaseParser):
         
         if nolock_before and nolock_after: raise EX.MyParserException("NOLOCK is declared 2 times")
 
-        return {"type" : "table", "nolock" : True if nolock_before else True if nolock_after else False, "value" : table, "alias" : alias}
+        return {"type" : "table", "operator" : operator, "nolock" : True if nolock_before else True if nolock_after else False, "body" : table, "alias" : alias}
 
     def function(self):
 
@@ -172,14 +172,11 @@ class MyParser(MyBaseParser):
 
         self.eat("FROM")
 
-        tablesList = [ self.table() ]
+        tablesList = [ self.table(None) ]
 
         while self.Lookhead and self.Lookhead["type"] in ["COMMA", "INNER", "LEFT", "RIGHT", "JOIN"]:
 
-            if self.Lookhead["type"] == "COMMA": 
-        
-                self.eat("COMMA")
-                tablesList.append(self.table())
+            if self.Lookhead["type"] == "COMMA": tablesList.append(self.table(self.eat("COMMA")["value"]))
 
             else: tablesList.append(self.joinExpression())
 
@@ -231,11 +228,7 @@ class MyParser(MyBaseParser):
 
         if self.Lookhead and self.Lookhead["type"] == "SELECT": body = self.queriesList()
 
-        else: 
-            
-            body = [ self.relationalExpression() ]
-
-            while self.Lookhead and self.Lookhead["category"] == "CONDITION": body.append(self.relationalExpression())
+        else: body = self.relationalExpression()
 
         self.eat("CLOSE-ROUND-BRACKET")
 
@@ -257,25 +250,25 @@ class MyParser(MyBaseParser):
 
         joinType += self.eat("JOIN")["value"] if self.Lookhead["type"] == "JOIN" else None
 
-        table = self.table()
+        table = self.table(None)
 
         self.eat("ON")
         
         conditionsList = [ self.conditionExpression() ]
         
-        while self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
+        while self.Lookhead and self.Lookhead["category"] == "CONDITION": conditionsList.append(self.conditionExpression())
 
-        return {"type" : "join_expression", "join_type" : joinType.upper(), "value" : table, "conditions_list" : conditionsList}
+        return {"type" : "join_expression", "operator" : joinType.upper(), "value" : table, "conditions_list" : conditionsList}
 
     def conditionExpression(self):
 
-        if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "right" : self.conditionsList()}
+        if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "body" : self.conditionsList()}
 
         else: 
             
             operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
 
-            return {"type" : "condition_expression", "operator" : operator, "right" : self.relationalExpression()} 
+            return {"type" : "condition_expression", "operator" : operator, "body" : self.relationalExpression()} 
 
     def relationalExpression(self):
 
@@ -319,9 +312,11 @@ class MyParser(MyBaseParser):
 
         while self.Lookhead and self.Lookhead["type"] == "ADDITIVE_OPERATOR":
 
-            operator = self.getSign()
+            operator = self.eat("ADDITIVE_OPERATOR")["value"]
 
-            rightValue = self.multiplicativeExpression()
+            signRightOperand = self.getSign()
+
+            rightValue = self.multiplicativeExpression(signRightOperand)
 
             leftValue = {"type" : "binary_expression", "operator" : operator, "left" : leftValue, "right" : rightValue}
 
@@ -357,7 +352,7 @@ class MyParser(MyBaseParser):
 
         self.eat("CASE")
         
-        myArgumentsList = []
+        myArgumentsList = [ self.whenExpression() ]
 
         while self.Lookhead and self.Lookhead["type"] == "WHEN": myArgumentsList.append(self.whenExpression())
 
@@ -450,13 +445,13 @@ class MyParser(MyBaseParser):
 
     def identifier(self): return {"type" : "identifier", "value" : self.eat("FUNCTION" if self.Lookhead["type"] == "FUNCTION" else "FIELDNAME")["value"]} 
 
-    def numericLiteral(self, sign): return {"type" : "numeric_literal", "sign" : sign, "value" : float(self.eat("NUMBER")["value"])}
+    def numericLiteral(self, sign): return {"type" : "literal", "subtype" : "numeric_literal", "sign" : sign, "value" : float(self.eat("NUMBER")["value"])}
 
-    def stringLiteral(self): return {"type" : "string_literal", "value" : self.eat("STRING")["value"][1:-1]}
+    def stringLiteral(self): return {"type" : "literal", "subtype" : "string_literal", "value" : self.eat("STRING")["value"][1:-1]}
 
-    def nullLiteral(self): return {"type" : "null_literal", "value" : self.eat("NULL")["value"]}
+    def nullLiteral(self): return {"type" : "literal", "subtype" : "null_literal", "value" : self.eat("NULL")["value"]}
 
-    def starLiteral(self): return {"type" : "star_literal", "value" : self.eat("STAR")["value"]}
+    def starLiteral(self): return {"type" : "literal", "subtype" : "star_literal", "value" : self.eat("STAR")["value"]}
     
 # ************************************************** FIELDS **************************************************** #
 
@@ -466,7 +461,7 @@ class MyParser(MyBaseParser):
     
     def nameFieldWithAlias(self, sign=None): 
         
-        result = {"type" : "field", "value" : self.identifier(), "alias": self.alias()}
+        result = {"type" : "field", "body" : self.identifier(), "alias": self.alias()}
 
         if sign: result["sign"] = sign
 
@@ -476,7 +471,7 @@ class MyParser(MyBaseParser):
         
         value = self.additiveExpression()
 
-        result = value if value["type"] == "field" else {"type" : "field", "value" : value, "alias": self.alias()}
+        result = value if value["type"] == "field" else {"type" : "field", "body" : value, "alias": self.alias()}
 
         if sign: result["sign"] = sign
 
@@ -498,7 +493,7 @@ class MyParser(MyBaseParser):
 
         signsList = []
         
-        while self.Lookhead and self.Lookhead["type"] == "ADDITIVE_OPERATOR": signsList.append(self.eat("ADDITIVE_OPERATOR")["value"])
+        while self.Lookhead and self.Lookhead["type"] == "ADDITIVE_OPERATOR": signsList.append(self.eat("ADDITIVE_OPERATOR")["value"] + "1")
         
         return signsList if len(signsList) > 0 else None
 
