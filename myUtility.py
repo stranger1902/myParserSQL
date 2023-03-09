@@ -1,4 +1,5 @@
 import myException as EX
+import platform
 import json
 import os
 
@@ -6,6 +7,7 @@ from colorama import Style, Fore, init
 from datetime import datetime
 from enum import Enum
 
+SEPARATOR = "\\" if platform.system() == "Windows" else "/"
 CURRENT_DATE = datetime.now().strftime('%Y_%m_%d')
 CURRENT_PATH = os.getcwd()
 
@@ -17,7 +19,7 @@ class LEVEL(Enum):
 
 class PATH(Enum): 
 
-    LOG_FILE_PATH = CURRENT_PATH + "\\" + "LOGS" + "\\"
+    LOG_FILE_PATH = CURRENT_PATH + SEPARATOR + "LOGS" + SEPARATOR
 
 class FILENAME(Enum):
 
