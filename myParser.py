@@ -141,7 +141,7 @@ class MyParser(MyBaseParser):
             else:
 
                 myConditionsList = [ self.conditionExpression() ]
-                
+
                 while self.Lookhead and self.Lookhead["category"] == "CONDITION": myConditionsList.append(self.conditionExpression())
 
             return myConditionsList
@@ -261,14 +261,22 @@ class MyParser(MyBaseParser):
         return {"type" : "join_expression", "operator" : joinType.upper(), "value" : table, "conditions_list" : conditionsList}
 
     def conditionExpression(self):
+        
+        if self.Lookhead:
 
-        if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "body" : self.conditionsList()}
+            if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "body" : self.conditionsList()}
 
-        else: 
-            
-            operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
+            else: 
+                
+                operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
 
-            return {"type" : "condition_expression", "operator" : operator, "body" : self.relationalExpression()} 
+                if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": return {"type" : "condition_expression", "operator" : operator, "body" : self.conditionsList()}
+
+                else: 
+                    
+                    expression = self.conditionExpression() if self.Lookhead and self.Lookhead["type"] == "NOT" else self.relationalExpression()
+                    
+                    return {"type" : "condition_expression", "operator" : operator, "body" : expression} 
 
     def relationalExpression(self):
 
@@ -378,7 +386,7 @@ class MyParser(MyBaseParser):
 
         self.eat("ELSE")
 
-        return {"type" : "else_expression", "then": self.additiveExpression()}
+        return {"type" : "else_expression", "then_expression": self.additiveExpression()}
 
     def existsExpression(self):
 
@@ -396,17 +404,15 @@ class MyParser(MyBaseParser):
 
         rightValue = {"type" : "in_expression", "target_field" : target_field, "queries_list" : self.subquery()}
 
-        return {"type" : "condition_expression", "operator" : "NOT", "right" : rightValue} if is_negative else rightValue
+        return {"type" : "condition_expression", "operator" : "NOT", "body" : [rightValue]} if is_negative else rightValue
         
-        return {"type" : "in_expression", "target_field" : target_field, "queries_list" : self.subquery()}
-
     def likeExpression(self, target_field, is_negative):
 
         self.eat("LIKE")
 
         rightValue = {"type" : "like_expression", "target_field" : target_field, "value" : self.literalExpression()}
 
-        return {"type" : "condition_expression", "operator" : "NOT", "right" : rightValue} if is_negative else rightValue
+        return {"type" : "condition_expression", "operator" : "NOT", "body" : [rightValue]} if is_negative else rightValue
 
     def isExpression(self, target_field):
 
@@ -414,7 +420,7 @@ class MyParser(MyBaseParser):
         
         is_negative = self.eat("NOT") if self.Lookhead["type"] == "NOT" else None
 
-        rightValue = {"type" : "condition_expression", "operator" : "NOT", "right" : self.nullLiteral()} if is_negative else self.nullLiteral()
+        rightValue = {"type" : "condition_expression", "operator" : "NOT", "body" : [self.nullLiteral()]} if is_negative else self.nullLiteral()
 
         return {"type" : "is_expression", "target_field" : target_field, "right" : rightValue}
 
@@ -427,7 +433,7 @@ class MyParser(MyBaseParser):
 
         rightValue = {"type" : "between_expression", "target_field" : target_field, "before" : beforeBetween, "after" : afterBetween}
 
-        return {"type" : "condition_expression", "operator" : "NOT", "right" : rightValue} if is_negative else rightValue
+        return {"type" : "condition_expression", "operator" : "NOT", "body" : [rightValue]} if is_negative else rightValue
         
     def literalExpression(self, sign):
 
