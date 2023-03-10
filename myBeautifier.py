@@ -1,8 +1,9 @@
+from platform import system
 from math import prod
 
-import json
-
 class MyBeautifier():
+
+    SEPARATOR = "\\" if system() == "Windows" else "/"
 
     def __init__(self): 
         
@@ -21,6 +22,10 @@ class MyBeautifier():
         self.QueryFormatted = self.QueryFormatted.rstrip("\nUNION\n")
 
         return self.QueryFormatted
+
+    def write(self, query, path, output_filename):
+
+        with open(path + self.SEPARATOR + output_filename, 'w') as outputFile: outputFile.write(query)
 
     def visitQuery(self, node): 
 
@@ -103,6 +108,8 @@ class MyBeautifier():
         elif node["body"]["type"] == "identifier": self.visitIdentifier(node["body"])
 
         else: raise Exception(f"Table type '{node['body']['type']}' is NOT valid")
+
+        if node["alias"]: self.QueryFormatted += f" AS {node['alias']['value']}"
 
     def visitCondition(self, node):
         #TODO: find better way to organize this method
@@ -238,6 +245,10 @@ class MyBeautifier():
 
                 self.visitExpression(item["then_expression"])
 
+        self.QueryFormatted += f"END "
+
+        if node["alias"]: self.QueryFormatted += f" AS {node['alias']['value']}"
+
     def visitBetweenExpression(self, node, is_negative):
         
         #TODO: find a better way to implement it
@@ -324,5 +335,3 @@ class MyBeautifier():
         product = prod(iterable) if iterable else +1
 
         return "" if int(product) > 0 else "-"
-
-    def printQuery(self): print(self.QueryFormatted)
