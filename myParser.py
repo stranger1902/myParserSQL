@@ -4,7 +4,6 @@ import myException as EX
 
 #TODO: impedire casi in cui una condizione è costituita soltanto da un identificatore (SELECT campo FROM tabella a WHERE hgvxnsfj AND a.campo < 3)
 #TODO: impedire alias nelle condizioni (SELECT campo FROM tabella WHERE a = b AS c)
-#TODO: prevedere alias per block statement nella select (SELECT (1+2) AS c )
 #TODO: impedire alias nelle expression (SELECT 1 AS a + 2 FROM tabella)
 #TODO: gestire le keyword ALL e ANY
 
@@ -228,7 +227,7 @@ class MyParser(MyBaseParser):
 
         if self.Lookhead and self.Lookhead["type"] == "SELECT": body = self.queriesList()
 
-        else: body = self.relationalExpression()
+        else: body = [ self.relationalExpression() ]
 
         self.eat("CLOSE-ROUND-BRACKET")
 
