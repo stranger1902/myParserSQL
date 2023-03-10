@@ -1,10 +1,6 @@
 
-#FILES IN FOLDERS
-LOGS/*.txt
-
 # FOLDERS
 __pycache__
-VARIE
 
 #FILES EXSTENSIONS
 *.json
