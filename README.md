@@ -27,8 +27,6 @@ This is a simple way to parse and beautify a query from string variable.
 from myBeautifier import MyBeautifier
 from myParser import MyParser
 
-import myUtility as U
-
 if __name__ == "__main__":
 
     #define a SQL Parser
@@ -60,8 +58,6 @@ This is a simple way to parse and beautify a query from file.
 ```python
 from myBeautifier import MyBeautifier
 from myParser import MyParser
-
-import myUtility as U
 
 if __name__ == "__main__":
     
