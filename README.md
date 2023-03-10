@@ -1,9 +1,8 @@
-# myParserSQL
+# Parser SQL
 
-Python implementation of an SQL Parser based on the Parsing Theory, in particular: 
-- it can analize the sintax of a query
-- it generates the AST of the query
-- it can, eventually, beautify the query
+Python implementation of a Parser SQL based on the Parsing Theory, in particular: 
+- it analizes the sintax of a query and generates the relative AST
+- it can, eventually, beautify the query from AST
 
 ## Table of Contents
 
