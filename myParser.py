@@ -1,25 +1,43 @@
 from myBaseParser import MyBaseParser
+from platform import system
+from os import path
 
 import myException as EX
-
-#TODO: impedire casi in cui una condizione è costituita soltanto da un identificatore (SELECT campo FROM tabella a WHERE hgvxnsfj AND a.campo < 3)
-#TODO: impedire alias nelle condizioni (SELECT campo FROM tabella WHERE a = b AS c)
-#TODO: impedire alias nelle expression (SELECT 1 AS a + 2 FROM tabella)
-#TODO: gestire le keyword ALL e ANY
+import json
 
 class MyParser(MyBaseParser):
 
+    SEPARATOR = "\\" if system() == "Windows" else "/"
+
     def __init__(self, program_type): 
         
-        super().__init__()
-
         self.ProgramType = program_type
 
-    def parse(self, string):
+        super().__init__()
 
-        super().parse(string)
+    def parseFromFile(self, input_path, input_filename):
+
+        if not path.exists(input_path): raise EX.MyParserException(f"The path '{input_path}' does NOT exists")
+
+        if not path.exists(input_path): raise EX.MyParserException(f"The file '{input_path + U.SEPARATOR + input_filename}' does NOT exists")
+
+        with open(input_path + self.SEPARATOR + input_filename, 'r') as inputFile: myQuery = inputFile.read()
+        
+        self.initTokenizer(myQuery)
 
         return self.program()
+    
+    def parse(self, string):
+
+        self.initTokenizer(string)
+
+        return self.program()
+    
+    def write(self, AST, output_path, output_filename):
+
+        if not path.exists(output_path): raise EX.MyParserException(f"The path '{output_path}' does NOT exists")
+
+        with open(output_path + self.SEPARATOR + output_filename, 'w') as resultFile: resultFile.write(json.dumps(AST, indent=4))
 
     def program(self): return {"type" : self.ProgramType, "queries_list" : self.queriesList()}
 
