@@ -1,26 +1,21 @@
 from myBeautifier import MyBeautifier
 from myParser import MyParser
-
-import myException as EX
-import myUtility as U
-import json
-import os
+from os import getcwd
 
 if __name__ == "__main__":
-	
-    #filePath = U.CURRENT_PATH + U.SEPARATOR + U.FILENAME.TEST_INPUT_FILENAME.value
-    filePath = U.CURRENT_PATH + U.SEPARATOR + U.FILENAME.INPUT_FILENAME.value
-
-    with open(filePath, 'r') as inputFile: myQuery = inputFile.read()
-
-    myAST = MyParser("query_select").parse(myQuery)
     
-    with open(U.CURRENT_PATH + U.SEPARATOR + U.FILENAME.AST_FILENAME.value, 'w') as resultFile: resultFile.write(json.dumps(myAST, indent=4))
+    CURRENT_PATH = getcwd()
+
+    myParser = MyParser("query_select")
+    
+    myAST = myParser.parseFromFile(CURRENT_PATH, "queryInput.txt")
+    
+    myParser.write(myAST, CURRENT_PATH, "AST.json")
 
     myBeautifier = MyBeautifier()
     
     queryFormatted = myBeautifier.beautify(myAST)
 
-    with open(U.CURRENT_PATH + U.SEPARATOR + U.FILENAME.OUTPUT_FILENAME.value, 'w') as outputFile: outputFile.write(queryFormatted)
+    myBeautifier.write(queryFormatted, CURRENT_PATH, "queryFormatted.txt")
     
-    myBeautifier.printQuery()
+    print(queryFormatted)
