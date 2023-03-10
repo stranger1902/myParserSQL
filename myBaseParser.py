@@ -8,7 +8,7 @@ class MyBaseParser():
         
         self.Tokenizer = MyTokenizer()
 
-    def parse(self, string):
+    def initTokenizer(self, string):
         
         self.Tokenizer.initialize(string)
 
