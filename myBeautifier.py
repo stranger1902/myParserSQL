@@ -163,7 +163,7 @@ class MyBeautifier():
 
         if operator: self.QueryFormatted += f" {operator} " if operator != "NOT" else f"{operator} " 
 
-        if isinstance(node["body"], list): for item in node["body"]: self.visitCondition(item)
+        if isinstance(node["body"], list): [ self.visitCondition(item) for item in node["body"] ]
 
         else:
 
