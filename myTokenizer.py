@@ -1,5 +1,4 @@
 import myException as EX
-import myUtility as U
 import regex as re
 
 RegexList = [
