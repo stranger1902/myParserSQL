@@ -281,7 +281,7 @@ class MyParser(MyBaseParser):
         
         if self.Lookhead:
 
-            if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "body" : self.conditionsList()}
+            if self.Lookhead["type"] == "NOT": return {"type" : "condition_expression", "operator" : self.eat("NOT")["value"], "body" : self.conditionExpression()}
 
             else: 
                 
@@ -294,7 +294,7 @@ class MyParser(MyBaseParser):
                     expression = self.conditionExpression() if self.Lookhead and self.Lookhead["type"] == "NOT" else self.relationalExpression()
                     
                     return {"type" : "condition_expression", "operator" : operator, "body" : expression} 
-
+                    
     def relationalExpression(self):
 
         if self.Lookhead:
