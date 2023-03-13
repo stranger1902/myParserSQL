@@ -79,20 +79,28 @@ class MyBeautifier():
             if table["type"] == "join_expression": self.visitJoinExpression(table)
 
             elif table["type"] == "table": 
-                
+
                 #TODO: find a better implementation
                 if isinstance(table["body"], list):
+
                     self.QueryFormatted += "("
+                    
                     self.addIndents(1, 0, True)
+
                     for item in table["body"]:
                         self.visitQuery(item)
                         self.addIndents(0, 0, True)
                         self.QueryFormatted += "UNION"
                         self.addIndents(0, 0, True)
+
                     #TODO: find a way to avoid self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION")
                     self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION")
+                    
                     self.QueryFormatted += ")"
+
                     self.addIndents(-1, 0, False)
+
+                    if table["alias"]: self.QueryFormatted += f" AS {table['alias']['value']}"
 
                 else: self.visitTable(table)
 
