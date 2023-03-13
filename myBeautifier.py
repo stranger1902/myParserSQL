@@ -33,9 +33,9 @@ class MyBeautifier():
         self.NumIndents += num_indents
         self.NumSpaces += num_spaces
 
-        if new_line: self.QueryFormatted = self.QueryFormatted + "\n" + "\t"*self.NumIndents + " "*num_spaces #+ self.QueryFormatted
+        if new_line: self.QueryFormatted = self.QueryFormatted + "\n" + "\t"*self.NumIndents + " "*self.NumSpaces
 
-        else: self.QueryFormatted = self.QueryFormatted + "\t"*self.NumIndents + " "*num_spaces #+ self.QueryFormatted
+        else: self.QueryFormatted = self.QueryFormatted + "\t"*self.NumIndents + " "*self.NumSpaces
 
     def visitQuery(self, node): 
 
@@ -78,7 +78,23 @@ class MyBeautifier():
             
             if table["type"] == "join_expression": self.visitJoinExpression(table)
 
-            elif table["type"] == "table": self.visitTable(table)
+            elif table["type"] == "table": 
+                
+                #TODO: find a better implementation
+                if isinstance(table["body"], list):
+                    self.QueryFormatted += "("
+                    self.addIndents(1, 0, True)
+                    for item in table["body"]:
+                        self.visitQuery(item)
+                        self.addIndents(0, 0, True)
+                        self.QueryFormatted += "UNION"
+                        self.addIndents(0, 0, True)
+                    #TODO: find a way to avoid self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION")
+                    self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION")
+                    self.QueryFormatted += ")"
+                    self.addIndents(-1, 0, False)
+
+                else: self.visitTable(table)
 
             else: raise Exception(f"Table type '{table['type']}' is NOT valid")
 
@@ -91,9 +107,10 @@ class MyBeautifier():
 
         self.QueryFormatted += "WHERE "
 
-        for condition in node["conditions_list"]: 
+        for item in node["conditions_list"]: 
+
             self.addIndents(1, 0, True)
-            self.visitCondition(condition)
+            self.visitCondition(item)
             self.addIndents(-1, 0, False)
 
     def visitGroupByStatement(self, node): 
@@ -139,19 +156,29 @@ class MyBeautifier():
             
             elif node["body"]["type"] == "identifier": self.visitIdentifier(node["body"])
 
+            elif node["body"]["type"] == "function": self.visitFunction(node["body"])
+
             elif node["body"]["type"] == "literal": self.visitLiteral(node["body"])
 
             else: raise Exception(f"Field type '{node['body']['type']}' is NOT valid")
 
         if node["alias"]: self.QueryFormatted += f" AS {node['alias']['value']}"
 
+    def visitKeyword(self, node):
+
+        if node["body"]["type"] == "block_statement": self.visitBlockStatement(node["body"])
+
+        else: 
+            
+            if node["body"]["type"] == "identifier": self.visitIdentifier(node["body"])
+
+            else: raise Exception(f"Keyword type '{node['body']['type']}' is NOT valid")
+            
     def visitTable(self, node):
 
         if node["operator"]: self.QueryFormatted += f"{node['operator']} "
 
-        if node["body"]["type"] == "binary_expression": self.visitBinaryExpression(node["body"])
-
-        elif node["body"]["type"] == "identifier": self.visitIdentifier(node["body"])
+        if node["body"]["type"] == "identifier": self.visitIdentifier(node["body"])
 
         else: raise Exception(f"Table type '{node['body']['type']}' is NOT valid")
 
@@ -159,13 +186,13 @@ class MyBeautifier():
 
     def visitCondition(self, node):
 
-        operator = node["operator"]
-
-        if operator: self.QueryFormatted += f" {operator} " if operator != "NOT" else f"{operator} " 
-
-        if isinstance(node["body"], list): [ self.visitCondition(item) for item in node["body"] ]
+        if node["type"] == "block_statement": self.visitBlockStatement(node)
 
         else:
+
+            operator = node["operator"]
+
+            if operator: self.QueryFormatted += f" {operator} " if operator != "NOT" else f"{operator} " 
 
             if node["body"]["type"] == "between_expression": self.visitBetweenExpression(node["body"], operator == "NOT")
 
@@ -187,13 +214,19 @@ class MyBeautifier():
 
     def visitExpression(self, node):
 
-        if node["type"] == "field": self.visitField(node)
+        if node["type"] == "binary_expression": self.visitBinaryExpression(node)
+
+        elif node["type"] == "block_statement": self.visitBlockStatement(node)
+        
+        elif node["type"] == "condition_expression": self.visitCondition(node)
+
+        elif node["type"] == "keyword_expression": self.visitKeyword(node)
+
+        elif node["type"] == "function": self.visitFunction(node)
         
         elif node["type"] == "literal": self.visitLiteral(node)
 
-        elif node["type"] == "function": self.visitFunction(node)
-
-        elif node["type"] == "condition_expression": self.visitCondition(node)
+        elif node["type"] == "field": self.visitField(node)
 
         else: raise Exception(f"Expression type '{node['type']}' is NOT valid")
 
@@ -218,31 +251,41 @@ class MyBeautifier():
         
         self.QueryFormatted += "("
 
+        self.addIndents(1, 0, False)
+
         for item in node["body"]:
             
             if item["type"] == "binary_expression": self.visitBinaryExpression(item)
 
+            elif item["type"] == "keyword_expression": self.visitKeyword(item)
+
             elif item["type"] == "condition_expression": 
-                
-                self.addIndents(1, 0, True)
+
+                self.addIndents(0, 0, True)
                 self.visitCondition(item)
-                self.addIndents(-1, 0, False)
+                self.addIndents(0, 0, False)
+
+            elif item["type"] == "query": self.visitQuery(item)
 
             else: raise Exception(f"Block statement type '{item['type']}' is NOT valid")
         
-        self.addIndents(1, 0, True)
+        self.addIndents(-1, 0, True)
+
         self.QueryFormatted += ")"
-        self.addIndents(-1, 0, False)
-
+        
     def visitJoinExpression(self, node):
+        
+        self.addIndents(2, 0, True)
 
-        self.QueryFormatted += f"\n{node['operator']} "
+        self.QueryFormatted += f"{node['operator']} "
 
         self.visitTable(node["value"])
 
         self.QueryFormatted += " ON "
 
         for condition in node["conditions_list"]: self.visitCondition(condition)
+
+        self.addIndents(-2, 0, False)
 
     def visitExistsExpression(self, node, is_negative):
 
@@ -260,7 +303,7 @@ class MyBeautifier():
 
     def visitCaseExpression(self, node):
 
-        self.addIndents(0, 0, True)
+        self.addIndents(1, 0, True)
 
         self.QueryFormatted += "CASE "
 
@@ -282,9 +325,11 @@ class MyBeautifier():
 
                 self.visitExpression(item["then_expression"])
 
-        self.QueryFormatted += f"END "
+        self.QueryFormatted += f" END "
 
-        if node["alias"]: self.QueryFormatted += f" AS {node['alias']['value']}"
+        if node["alias"]: self.QueryFormatted += f"AS {node['alias']['value']}"
+
+        self.addIndents(-1, 0, False)
 
     def visitBetweenExpression(self, node, is_negative):
         
