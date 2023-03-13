@@ -4,10 +4,12 @@ Python implementation of a Parser SQL based on the Parsing Theory, in particular
 - it analizes the sintax of a query and generates the relative AST
 - it can, eventually, beautify the query from AST
 
+ATTENTION! This Parser is just a syntactic analizer, NOT a semantic one
+
 ## Table of Contents
 
 - [Installation](#installation)
-- [How To Use](#how-to-use)
+- [Usage](#usage)
 - [TODO List](#todo-list)
 
 ## Installation
@@ -18,7 +20,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## How To Use
+## Usage
 
 This is a simple way to parse and beautify a query from string variable.
 
