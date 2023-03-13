@@ -162,10 +162,12 @@ RegexList = [
              ("^(?i)\\bDATEADD\\b", "FUNCTION", "ID"),                         # dateAdd() function
              ("^(?i)\\bGETDATE\\b", "FUNCTION", "ID"),                         # getDate() function
              ("^(?i)\\bISDATE\\b", "FUNCTION", "ID"),                          # isDate() function
-             ("^(?i)\\bMONTH\\b", "FUNCTION", "ID"),                           # month() function
              ("^(?i)\\bLEAST\\b", "FUNCTION", "ID"),                           # least() function
-             ("^(?i)\\bYEAR\\b", "FUNCTION", "ID"),                            # year() function
-             ("^(?i)\\bDAY\\b", "FUNCTION", "ID"),                             # day() function
+             
+             # DATE FUNCTIONS THAT ARE KEYWORDS TOO
+             ("^(?i)\\bMONTH\\b", "FUNCTION", "KEYWORD"),                      # month() function - month keyword
+             ("^(?i)\\bYEAR\\b", "FUNCTION", "KEYWORD"),                       # year() function - year keyword
+             ("^(?i)\\bDAY\\b", "FUNCTION", "KEYWORD"),                        # day() function - day keyword
 
              # CONVERTION FUNCTIONS
              ("^(?i)\\bTO_CHAR\\b", "FUNCTION", "ID"),                         # toChar() function
