@@ -1,6 +1,8 @@
 import myException as EX
+import json 
 
 from myTokenizer import MyTokenizer
+from os import path 
 
 class MyBaseParser():
 
@@ -25,3 +27,9 @@ class MyBaseParser():
         self.Lookhead = self.Tokenizer.getNextToken()
 
         return token
+
+    def write(self, AST, output_path, output_filename):
+
+        if not path.exists(output_path): raise EX.MyParserException(f"The path '{output_path}' does NOT exists")
+
+        with open(output_path + self.SEPARATOR + output_filename, 'w') as resultFile: resultFile.write(json.dumps(AST, indent=4))

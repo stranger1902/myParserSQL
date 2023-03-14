@@ -32,12 +32,6 @@ class MyParser(MyBaseParser):
         self.initTokenizer(string)
 
         return self.program()
-    
-    def write(self, AST, output_path, output_filename):
-
-        if not path.exists(output_path): raise EX.MyParserException(f"The path '{output_path}' does NOT exists")
-
-        with open(output_path + self.SEPARATOR + output_filename, 'w') as resultFile: resultFile.write(json.dumps(AST, indent=4))
 
     def program(self): return {"type" : self.ProgramType, "queries_list" : self.queriesList()}
 
@@ -83,7 +77,7 @@ class MyParser(MyBaseParser):
                 self.eat("COMMA")
                 subquery.append(self.literalExpression(self.getSign()))
 
-        else: subquery = self.queriesList()
+        else: subquery = {"type" : "block_statement", "body" : self.queriesList()}
 
         self.eat("CLOSE-ROUND-BRACKET")
 
@@ -297,7 +291,8 @@ class MyParser(MyBaseParser):
 
                 self.eat("CLOSE-ROUND-BRACKET")
                 
-                return {"type" : "condition_expression", "operator" : None, "body" : {"type" : "block_statement", "body" : block}}
+                #return {"type" : "condition_expression", "operator" : None, "body" : {"type" : "block_statement", "body" : block}}
+                return {"type" : "block_statement", "body" : block}
                 
             else: 
 
