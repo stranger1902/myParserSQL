@@ -40,7 +40,7 @@ if __name__ == "__main__":
     myAST = myParser.parse(myQuery)
     
     #optionally, you can store AST into a file
-    myParser.write(myAST, U.CURRENT_PATH, U.FILENAME.AST_FILENAME.value)
+    myParser.write(myAST, "__some_output_path__", "__some_output_filename__")
 
     #define a SQL Beautifier
     myBeautifier = MyBeautifier()
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     queryFormatted = myBeautifier.beautify(myAST)
     
     #optionally, you can store formatted query into a file
-    myBeautifier.write(queryFormatted, U.CURRENT_PATH, U.FILENAME.OUTPUT_FILENAME.value)
+    myBeautifier.write(queryFormatted, "__some_output_path__", "__some_output_filename__")
     
     print(queryFormatted)
 ```
@@ -66,10 +66,10 @@ if __name__ == "__main__":
     myParser = MyParser("query_select")
     
     #generate AST from query imported from file
-    myAST = myParser.parseFromFile("__file_path__", "__input_file_name__")
+    myAST = myParser.parseFromFile("__some_input_path__", "__some_input_filename__")
     
     #optionally, you can store AST into a file
-    myParser.write(myAST, "__file_path__", "__output_file_name__")
+    myParser.write(myAST, "__some_output_path__", "__some_output_filename__")
     
     #define a SQL Beautifier
     myBeautifier = MyBeautifier()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     queryFormatted = myBeautifier.beautify(myAST)
     
     #optionally, you can store formatted query into a file
-    myBeautifier.write(queryFormatted, "__file_path__", "__output_file_name__")
+    myBeautifier.write(queryFormatted, "__some_output_path__", "__some_output_filename__")
     
     print(queryFormatted)
 ```
