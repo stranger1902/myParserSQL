@@ -105,7 +105,7 @@ class MyParser(MyBaseParser):
         
         else: nolock_after = None
         
-        if nolock_before and nolock_after: raise EX.MyParserException("NOLOCK is declared 2 times")
+        if nolock_before and nolock_after: raise EX.MySyntaxException("NOLOCK is declared 2 times")
 
         return {"type" : "table", "operator" : operator, "nolock" : True if nolock_before else True if nolock_after else False, "body" : table, "alias" : alias}
 
@@ -489,8 +489,12 @@ class MyParser(MyBaseParser):
 
     def nameFieldWithOrientation(self): 
         
-        return {"orientation" : self.eat(self.Lookhead["type"])["type"] if self.Lookhead["type"] in ("DESC", "ASC") else None, "body" : self.nameFieldWithAlias()}
-    
+        field = self.nameFieldWithAlias()
+
+        orientation = self.eat(self.Lookhead["type"])["type"] if self.Lookhead["type"] in ("DESC", "ASC") else None
+
+        return {"orientation" : orientation, "body" : field}
+
     def nameFieldWithAlias(self, sign=None): 
         
         result = {"type" : "field", "body" : self.identifier(), "alias": self.alias()}
