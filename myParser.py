@@ -291,7 +291,6 @@ class MyParser(MyBaseParser):
 
                 self.eat("CLOSE-ROUND-BRACKET")
                 
-                #return {"type" : "condition_expression", "operator" : None, "body" : {"type" : "block_statement", "body" : block}}
                 return {"type" : "block_statement", "body" : block}
                 
             else: 
@@ -300,9 +299,9 @@ class MyParser(MyBaseParser):
 
                 if self.Lookhead:
 
-                    if self.Lookhead["type"] in ("NOT", "OPEN-ROUND-BRACKET"): return {"type" : "condition_expression", "operator" : operator, "body" : self.conditionExpression()}
+                    body = self.conditionExpression() if self.Lookhead["type"] in ("NOT", "OPEN-ROUND-BRACKET") else self.relationalExpression()
                     
-                    else: return {"type" : "condition_expression", "operator" : operator, "body" : self.relationalExpression()}
+                    return {"type" : "condition_expression", "operator" : operator, "body" : body}
   
     def relationalExpression(self):
 
