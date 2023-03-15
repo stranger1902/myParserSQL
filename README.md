@@ -11,6 +11,7 @@ ATTENTION! This Parser is just a syntactic analizer, NOT a semantic one
 - [Installation](#installation)
 - [Usage](#usage)
 - [TODO List](#todo-list)
+- [Bugs to Fix](#bugs-to-fix)
 
 ## Installation
 
@@ -91,3 +92,21 @@ if __name__ == "__main__":
 - impedire alias nelle expression
   - es. SELECT 1 AS a + 2 FROM tabella
 - gestire le keyword ALL e ANY
+
+## Bugs to Fix
+
+This Parser can recognize condition patterns like
+```sql
+    SELECT field FROM table WHERE a > b
+    SELECT field FROM table WHERE (a > b)
+    SELECT field FROM table WHERE a + b > c
+    SELECT field FROM table WHERE (a > b AND c < d)
+    SELECT field FROM table WHERE (a > b) AND c < d
+    SELECT field FROM table WHERE (a > b AND c < d) AND e = f
+        
+    #   ... and others
+```
+but it can't recognize condition patterns like
+```sql
+    SELECT field FROM table WHERE (a + b) > c
+```
