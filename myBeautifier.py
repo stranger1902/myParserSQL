@@ -46,6 +46,8 @@ class MyBeautifier():
 
             if statement["type"] == "group_by_statement": self.visitGroupByStatement(statement)
 
+            elif statement["type"] == "order_by_statement": self.visitOrderByStatement(statement)
+
             elif statement["type"] == "having_statement": self.visitHavingStatement(statement)
 
             elif statement["type"] == "select_statement": self.visitSelectStatement(statement)
@@ -53,8 +55,6 @@ class MyBeautifier():
             elif statement["type"] == "where_statement": self.visitWhereStatement(statement)
 
             elif statement["type"] == "from_statement": self.visitFromStatement(statement)
-
-            #TODO: ORDER BY statement
 
             else: raise Exception(f"Statement type '{statement['type']}' is NOT valid")
 
@@ -127,6 +127,22 @@ class MyBeautifier():
         self.QueryFormatted += "HAVING "
 
         for condition in node["conditions_list"]: self.visitCondition(condition)
+
+    def visitOrderByStatement(self, node):
+
+        self.addNewLine(0, 0)
+
+        self.QueryFormatted += "ORDER BY "
+
+        for field in node["fields_list"]: 
+
+            self.visitField(field["body"])
+
+            if field["orientation"]: self.QueryFormatted += f" {field['orientation']}"
+
+            self.QueryFormatted += ", "
+
+        self.QueryFormatted = self.QueryFormatted.rstrip(", ")
 
     def visitBinaryExpression(self, node): 
         
