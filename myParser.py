@@ -293,7 +293,15 @@ class MyParser(MyBaseParser):
 
                     operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
 
-                    return {"type" : "condition_expression", "operator" : operator, "body" : self.relationalExpression()}
+                    position = self.Tokenizer.Position + 1
+
+                    body = self.relationalExpression()
+
+                    if body["type"] in ("literal", "field"): raise EX.MySyntaxException(f"Position {position}: We expected a relational operator")
+                    
+                    if not (body["left"]["alias"] and body["right"]["alias"]): raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted for expression used in conditions")
+
+                    return {"type" : "condition_expression", "operator" : operator, "body" : body}
 
                 self.eat("OPEN-ROUND-BRACKET")
 
@@ -311,8 +319,18 @@ class MyParser(MyBaseParser):
 
                 if self.Lookhead:
 
-                    body = self.conditionExpression() if self.Lookhead["type"] in ("NOT", "OPEN-ROUND-BRACKET") else self.relationalExpression()
+                    position = self.Tokenizer.Position + 1
                     
+                    if self.Lookhead["type"] in ("NOT", "OPEN-ROUND-BRACKET"): body = self.conditionExpression()
+
+                    else:
+
+                        body = self.relationalExpression()
+
+                        if not (body["left"]["alias"] and body["right"]["alias"]): raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted for expression used in conditions")
+                        
+                    if body["type"] in ("literal", "field"): raise EX.MySyntaxException(f"Position {position}: We expected a relational operator")
+
                     return {"type" : "condition_expression", "operator" : operator, "body" : body}
   
     def relationalExpression(self):
