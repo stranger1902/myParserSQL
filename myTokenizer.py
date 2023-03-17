@@ -230,4 +230,15 @@ class MyTokenizer():
         self.Position += len(result.group())
 
         return result.group()
-        
+
+    def isRoundedExpression(self, string):
+
+        result = re.search("\((?:[^()]+|(?R))*+\)", string)
+
+        if not result: raise Exception("Regex failed")
+
+        result = result.group()
+
+        if ("AND" not in result) and ("OR" not in result) and ("NOT" not in result): return True
+
+        return False
