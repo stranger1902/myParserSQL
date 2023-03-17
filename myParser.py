@@ -67,7 +67,7 @@ class MyParser(MyBaseParser):
         
         self.eat("OPEN-ROUND-BRACKET")
         
-        if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": subquery = {"type" : "block_statement", "body" : self.subquery()}
+        if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.subquery()}
 
         elif self.Lookhead["category"] == "LITERAL":
 
@@ -77,7 +77,7 @@ class MyParser(MyBaseParser):
                 self.eat("COMMA")
                 subquery.append(self.literalExpression(self.getSign()))
 
-        else: subquery = {"type" : "block_statement", "body" : self.queriesList()}
+        else: subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.queriesList()}
 
         self.eat("CLOSE-ROUND-BRACKET")
 
@@ -243,13 +243,19 @@ class MyParser(MyBaseParser):
         
         self.eat("OPEN-ROUND-BRACKET")
 
-        if self.Lookhead and self.Lookhead["type"] == "SELECT": body = self.queriesList()
+        if self.Lookhead:
+        
+            if self.Lookhead["type"] == "SELECT": 
+                subtype = "block_query_statement"
+                body = self.queriesList()
 
-        else: body = [ self.relationalExpression() ]
+            else: 
+                subtype = "block_expression_statement"
+                body = [ self.relationalExpression() ]
 
         self.eat("CLOSE-ROUND-BRACKET")
 
-        return {"type" : "block_statement", "body" : body}
+        return {"type" : "block_statement", "subtype" : subtype, "body" : body}
 
 # ************************************************ EXPRESSIONS ************************************************* #
 
@@ -283,6 +289,12 @@ class MyParser(MyBaseParser):
 
             if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": 
                 
+                if self.Tokenizer.isRoundedExpression(self.Tokenizer.String[self.Tokenizer.Position - 1:]):
+
+                    operator = self.eat(self.Lookhead["type"])["value"] if self.Lookhead["category"] == "CONDITION" else None
+
+                    return {"type" : "condition_expression", "operator" : operator, "body" : self.relationalExpression()}
+
                 self.eat("OPEN-ROUND-BRACKET")
 
                 block = [ self.conditionExpression() ]
@@ -291,7 +303,7 @@ class MyParser(MyBaseParser):
 
                 self.eat("CLOSE-ROUND-BRACKET")
                 
-                return {"type" : "block_statement", "body" : block}
+                return {"type" : "block_statement", "subtype" : "block_condition_statement", "body" : block}
                 
             else: 
 
