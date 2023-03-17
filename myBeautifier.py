@@ -210,7 +210,11 @@ class MyBeautifier():
 
         elif node["body"]["type"] == "in_expression": self.visitInExpression(node["body"], operator == "NOT")
 
-        elif node["body"]["type"] == "block_statement": self.visitBlockStatementCondition(node["body"])
+        elif node["body"]["type"] == "block_statement": 
+            
+            if node["body"]["subtype"] == "block_condition_statement": self.visitBlockStatementCondition(node["body"])
+
+            elif node["body"]["subtype"] == "block_expression_statement": self.visitBlockStatement(node["body"])
 
         elif node["body"]["type"] == "binary_expression": self.visitBinaryExpression(node["body"])
 
@@ -224,7 +228,11 @@ class MyBeautifier():
 
     def visitExpression(self, node):
 
-        if node["type"] == "block_statement": self.visitBlockStatementQueries(node)
+        if node["type"] == "block_statement": 
+            
+            if node["subtype"] == "block_expression_statement" : self.visitBlockStatement(node)
+
+            else: self.visitBlockStatementQueries(node)
 
         elif node["type"] == "binary_expression": self.visitBinaryExpression(node)
 
@@ -263,13 +271,17 @@ class MyBeautifier():
 
         for item in node["body"]:
             
-            if item["type"] == "binary_expression": self.visitBinaryExpression(item)
+            if item["type"] == "block_statement": self.visitBlockStatementField(item)
 
-            elif item["type"] == "keyword_expression": self.visitKeyword(item)
+            else:
 
-            elif item["type"] == "query": self.visitQuery(item)
+                if item["type"] == "binary_expression": self.visitBinaryExpression(item)
 
-            else: raise Exception(f"Block statement field type '{item['type']}' is NOT valid")
+                elif item["type"] == "keyword_expression": self.visitKeyword(item)
+
+                elif item["type"] == "query": self.visitQuery(item)
+
+                else: raise Exception(f"Block statement field type '{item['type']}' is NOT valid")
 
         self.QueryFormatted += ")"
 
@@ -280,7 +292,7 @@ class MyBeautifier():
         self.QueryFormatted += "("
 
         for item in node["body"]: 
-
+            
             if item["type"] == "block_statement": self.visitBlockStatementCondition(item)
 
             else:
@@ -304,6 +316,7 @@ class MyBeautifier():
 
         for item in node["body"]:
 
+            #TODO: da prevedere un if item["type"] == "block_statement": self.visitBlockStatement(item) else ... ???
             self.visitQuery(item)
             self.addNewLine(0, 0)
             self.QueryFormatted += "UNION"
@@ -323,12 +336,16 @@ class MyBeautifier():
         self.QueryFormatted += "("
 
         for item in node["body"]:
-            
-            if item["type"] == "binary_expression": self.visitBinaryExpression(item)
 
-            elif item["type"] == "keyword_expression": self.visitKeyword(item)
+            if item["type"] == "block_statement": self.visitBlockStatement(item)
 
-            else: raise Exception(item)
+            else:
+
+                if item["type"] == "binary_expression": self.visitBinaryExpression(item)
+
+                elif item["type"] == "keyword_expression": self.visitKeyword(item)
+
+                else: raise Exception(item)
 
         self.QueryFormatted += ")"
 
