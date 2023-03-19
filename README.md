@@ -1,6 +1,6 @@
 # Parser SQL
 
-Python implementation of a Parser SQL based on the Parsing Theory, in particular: 
+Python implementation of a Parser SQL (SQL Server Language) based on the Parsing Theory, in particular: 
 - it analizes the sintax of a query and generates the relative AST
 - it can, eventually, beautify the query from AST
 
@@ -85,5 +85,6 @@ if __name__ == "__main__":
 
 ## TODO List
 
-- gestire le keyword ALL e ANY
+- keyword ALL and ANY
+- optimize code of MyBeautifier class
 
