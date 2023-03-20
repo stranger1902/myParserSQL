@@ -16,11 +16,12 @@ class MyBeautifier():
         for query in AST["queries_list"]: 
 
             self.visitQuery(query)
-
+            self.addNewLine(0, 0)
             self.QueryFormatted += "UNION"
+            self.addNewLine(0, 0)
 
-        #TODO: find a way to avoid self.QueryFormatted = self.QueryFormatted.rstrip("UNION")
-        self.QueryFormatted = self.QueryFormatted.rstrip("UNION")
+        #TODO: find a way to avoid self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION").rstrip()
+        self.QueryFormatted = self.QueryFormatted.rstrip().rstrip("UNION").rstrip()
 
         return self.QueryFormatted
 
@@ -189,7 +190,7 @@ class MyBeautifier():
             
     def visitTable(self, node):
 
-        if node["operator"]: self.QueryFormatted += f"{node['operator']} "
+        if node["operator"]: self.QueryFormatted += f"{node['operator'].upper()} "
 
         if node["body"]["type"] == "block_statement": self.visitBlockStatementQueries(node["body"])
 
@@ -207,7 +208,7 @@ class MyBeautifier():
 
         operator = node["operator"]
 
-        if operator: self.QueryFormatted += f" {operator} " if operator != "NOT" else f"{operator} " 
+        if operator: self.QueryFormatted += f" {operator.upper()} " if operator != "NOT" else f"{operator} " 
 
         if node["body"]["type"] == "between_expression": self.visitBetweenExpression(node["body"], operator == "NOT")
 
@@ -221,6 +222,8 @@ class MyBeautifier():
 
             elif node["body"]["subtype"] == "block_expression_statement": self.visitBlockStatement(node["body"])
 
+            else: raise Exception(f"Block statement subtype '{node['body']['subtype']}' is NOT valid")
+            
         elif node["body"]["type"] == "binary_expression": self.visitBinaryExpression(node["body"])
 
         elif node["body"]["type"] == "condition_expression": self.visitCondition(node["body"])
@@ -240,6 +243,8 @@ class MyBeautifier():
             else: self.visitBlockStatementQueries(node)
 
         elif node["type"] == "binary_expression": self.visitBinaryExpression(node)
+
+        elif node["type"] == "case_expression": self.visitCaseExpression(node)
 
         elif node["type"] == "condition_expression": self.visitCondition(node)
 
@@ -358,7 +363,7 @@ class MyBeautifier():
         
         self.addNewLine(2, 0)
 
-        self.QueryFormatted += f"{node['operator']} "
+        self.QueryFormatted += f"{node['operator'].upper()} "
 
         self.visitTable(node["value"])
 
