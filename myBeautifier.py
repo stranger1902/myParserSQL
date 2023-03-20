@@ -62,8 +62,13 @@ class MyBeautifier():
         
         self.QueryFormatted += "SELECT "
 
-        self.QueryFormatted += f"TOP {node['limit_row']} " if node['limit_row'] else "" + "DISTINCT " if node["distinct"] else ""
+        self.QueryFormatted += "DISTINCT " if node["distinct"] else ""
 
+        if node['limit_row']:
+            self.QueryFormatted += "TOP "
+            self.visitNumericLiteral(node['limit_row'])
+            self.QueryFormatted += f" "
+        
         for field in node["fields_list"]:
             
             self.visitField(field)
