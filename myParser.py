@@ -39,9 +39,7 @@ class MyParser(MyBaseParser):
 
         myQueriesList = [ self.query() ]
 
-        while self.Lookhead and self.Lookhead["type"] == "UNION":
-            self.eat("UNION")
-            myQueriesList.append(self.query())
+        while self.Lookhead and self.Lookhead["type"] == "UNION" and self.eat("UNION"): myQueriesList.append(self.query())
         
         return myQueriesList
 
@@ -66,18 +64,18 @@ class MyParser(MyBaseParser):
     def subquery(self):
         
         self.eat("OPEN-ROUND-BRACKET")
-        
-        if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.subquery()}
 
-        elif self.Lookhead["category"] == "LITERAL":
+        if self.Lookhead:
 
-            subquery = [ self.literalExpression(self.getSign()) ]
+            if self.Lookhead["type"] == "OPEN-ROUND-BRACKET": subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.subquery()}
 
-            while self.Lookhead["type"] == "COMMA":
-                self.eat("COMMA")
-                subquery.append(self.literalExpression(self.getSign()))
+            elif self.Lookhead["category"] == "LITERAL":
 
-        else: subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.queriesList()}
+                subquery = [ self.literalExpression(self.getSign()) ]
+
+                while self.Lookhead and self.Lookhead["type"] == "COMMA" and self.eat("COMMA"): subquery.append(self.literalExpression(self.getSign()))
+
+            else: subquery = {"type" : "block_statement", "subtype" : "block_query_statement", "body" : self.queriesList()}
 
         self.eat("CLOSE-ROUND-BRACKET")
 
@@ -111,54 +109,25 @@ class MyParser(MyBaseParser):
 
     def function(self):
 
+        identifier = self.identifier()
+
         if self.Lookhead["category"] == "KEYWORD":
 
-            identifier = self.identifier()
-
             if self.Lookhead["type"] == "OPEN-ROUND-BRACKET":
-
-                self.eat("OPEN-ROUND-BRACKET")
                 
-                distinct = self.eat("DISTINCT") if self.Lookhead and self.Lookhead["type"] == "DISTINCT" else None
-
-                if distinct: myArgumentsList = [ self.additiveExpression() ]
-
-                else:
-                    
-                    myArgumentsList = [ self.relationalExpression() ] if self.Lookhead["type"] != "CLOSE-ROUND-BRACKET" else []
-                
-                    while self.Lookhead["type"] == "COMMA":
-                        self.eat("COMMA")
-                        myArgumentsList.append(self.additiveExpression())
-
-                self.eat("CLOSE-ROUND-BRACKET")
+                distinct, myArgumentsList = self.getArgumentsList()
 
                 return {"type" : "function", "distinct" : True if distinct else False, "name" : identifier, "arguments_list" : myArgumentsList}
-        
+
+            # functions that are keywords too (es. YEAR) 
             return {"type" : "keyword_expression", "body" : identifier}
 
-        else:
+        else: 
             
-            identifier = self.identifier()
-
-            self.eat("OPEN-ROUND-BRACKET")
+            distinct, myArgumentsList = self.getArgumentsList()
             
-            distinct = self.eat("DISTINCT") if self.Lookhead and self.Lookhead["type"] == "DISTINCT" else None
-
-            if distinct: myArgumentsList = [ self.additiveExpression() ]
-
-            else:
-                
-                myArgumentsList = [ self.relationalExpression() ] if self.Lookhead["type"] != "CLOSE-ROUND-BRACKET" else []
-            
-                while self.Lookhead["type"] == "COMMA":
-                    self.eat("COMMA")
-                    myArgumentsList.append(self.additiveExpression())
-
-            self.eat("CLOSE-ROUND-BRACKET")
-
             return {"type" : "function", "distinct" : True if distinct else False, "name" : identifier, "arguments_list" : myArgumentsList}
-  
+
 # ************************************************* STATEMENTS ************************************************* #
 
     def selectStatement(self):
@@ -167,17 +136,13 @@ class MyParser(MyBaseParser):
 
         distinctToken = self.eat("DISTINCT") if self.Lookhead and self.Lookhead["type"] == "DISTINCT" else None
         
-        if self.Lookhead and self.Lookhead["type"] == "TOP":
-            self.eat("TOP") 
-            limitNumberRow = self.numericLiteral(self.getSign())
+        if self.Lookhead and self.Lookhead["type"] == "TOP" and self.eat("TOP"): limitNumberRow = self.numericLiteral(self.getSign())
 
         else: limitNumberRow = None
 
         fieldsNameList = [ self.expressionFieldWithAlias() ]
 
-        while self.Lookhead and self.Lookhead["type"] == "COMMA":
-            self.eat("COMMA")
-            fieldsNameList.append(self.expressionFieldWithAlias())
+        while self.Lookhead and self.Lookhead["type"] == "COMMA" and self.eat("COMMA"): fieldsNameList.append(self.expressionFieldWithAlias())
 
         return {"type" : "select_statement", "distinct" : True if distinctToken else False, "limit_row" : limitNumberRow, "fields_list" : fieldsNameList}
 
@@ -211,9 +176,7 @@ class MyParser(MyBaseParser):
 
         fieldsList = [ self.nameFieldWithAlias() ]
 
-        while self.Lookhead and self.Lookhead["type"] == "COMMA":
-            self.eat("COMMA")
-            fieldsList.append(self.nameFieldWithAlias())
+        while self.Lookhead and self.Lookhead["type"] == "COMMA" and self.eat("COMMA"): fieldsList.append(self.nameFieldWithAlias())
 
         return {"type" : "group_by_statement", "fields_list" : fieldsList}
 
@@ -233,9 +196,7 @@ class MyParser(MyBaseParser):
 
         fieldsList = [ self.nameFieldWithOrientation() ]
 
-        while self.Lookhead and self.Lookhead["type"] == "COMMA":
-            self.eat("COMMA")
-            fieldsList.append(self.nameFieldWithOrientation())
+        while self.Lookhead and self.Lookhead["type"] == "COMMA" and self.eat("COMMA"): fieldsList.append(self.nameFieldWithOrientation())
 
         return {"type" : "order_by_statement", "fields_list" : fieldsList}
 
@@ -245,13 +206,9 @@ class MyParser(MyBaseParser):
 
         if self.Lookhead:
         
-            if self.Lookhead["type"] == "SELECT": 
-                subtype = "block_query_statement"
-                body = self.queriesList()
+            if self.Lookhead["type"] == "SELECT": subtype, body = "block_query_statement", self.queriesList()
 
-            else: 
-                subtype = "block_expression_statement"
-                body = [ self.relationalExpression() ]
+            else: subtype, body = "block_expression_statement", [ self.relationalExpression() ]
 
         self.eat("CLOSE-ROUND-BRACKET")
 
@@ -298,9 +255,11 @@ class MyParser(MyBaseParser):
                     body = self.relationalExpression()
 
                     if body["type"] in ("literal", "field"): raise EX.MySyntaxException(f"Position {position}: We expected a relational operator")
-                    
-                    if not (body["left"]["alias"] and body["right"]["alias"]): raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted for expression used in conditions")
-
+                    '''
+                    if body["type"] == "binary_expression" \
+                        and ( (body["left"]["type"] == "field" and body["left"]["alias"]) or (body["right"]["type"] == "field" and body["right"]["alias"]) ):
+                        raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted in expression used for conditions")
+                    '''
                     return {"type" : "condition_expression", "operator" : operator, "body" : body}
 
                 self.eat("OPEN-ROUND-BRACKET")
@@ -326,9 +285,11 @@ class MyParser(MyBaseParser):
                     else:
 
                         body = self.relationalExpression()
-
-                        if not (body["left"]["alias"] and body["right"]["alias"]): raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted for expression used in conditions")
-                        
+                        '''
+                        if body["type"] == "binary_expression" \
+                            and ( (body["left"]["type"] == "field" and body["left"]["alias"]) or (body["right"]["type"] == "field" and body["right"]["alias"]) ):
+                            raise EX.MySyntaxException(f"Position {position}: Alias are NOT permitted in expression used for conditions")
+                        '''
                     if body["type"] in ("literal", "field"): raise EX.MySyntaxException(f"Position {position}: We expected a relational operator")
 
                     return {"type" : "condition_expression", "operator" : operator, "body" : body}
@@ -448,7 +409,9 @@ class MyParser(MyBaseParser):
         self.eat("EXISTS")
 
         self.eat("OPEN-ROUND-BRACKET")
+
         myQueriesList = self.queriesList()
+
         self.eat("CLOSE-ROUND-BRACKET")
         
         return {"type" : "exists_expression", "queries_list" : myQueriesList}
@@ -482,8 +445,11 @@ class MyParser(MyBaseParser):
     def betweenExpression(self, target_field, is_negative):
 
         self.eat("BETWEEN")
+
         beforeBetween = self.additiveExpression()
+
         self.eat("AND")
+
         afterBetween = self.additiveExpression()
 
         rightValue = {"type" : "between_expression", "target_field" : target_field, "before" : beforeBetween, "after" : afterBetween}
@@ -553,6 +519,24 @@ class MyParser(MyBaseParser):
             else: return None
 
 # ************************************************** UTILITY *************************************************** #
+
+    def getArgumentsList(self):
+     
+        self.eat("OPEN-ROUND-BRACKET")
+        
+        distinct = self.eat("DISTINCT") if self.Lookhead and self.Lookhead["type"] == "DISTINCT" else None
+
+        if distinct: myArgumentsList = [ self.additiveExpression() ]
+
+        else:
+            
+            myArgumentsList = [ self.relationalExpression() ] if self.Lookhead["type"] != "CLOSE-ROUND-BRACKET" else []
+        
+            while self.Lookhead and self.Lookhead["type"] == "COMMA" and self.eat("COMMA"): myArgumentsList.append(self.additiveExpression())
+
+        self.eat("CLOSE-ROUND-BRACKET")
+
+        return distinct, myArgumentsList
 
     def getSign(self):
 
